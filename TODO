@@ -1,0 +1,14 @@
+Simplified steem-python with support for these features:
+   Make posting,active,owner etc WIF keys from username+password
+   Parse WIF or address into key with arbitrary prefixes
+   Build op + transaction without overcomplex stuff from steem-python
+   Sign unsigned transaction
+   Send signed transaction to steemd
+   Testnet tools
+     Create testnet account and store keys
+
+Test suite
+   Full coverage of all of the above 
+
+API endpoints + listener
+   As specified in API_DESIGN
