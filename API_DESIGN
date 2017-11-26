@@ -1,0 +1,87 @@
+Registration request table:
+   Request ID
+   Request created at
+   Request created by IP
+   Requested username
+   Primary email address
+   Primary phone number
+   Third-party type - what third party was used (github/facebook/linkedin/etc)
+   Third-party data - JSON blob
+   Expiry time
+   EmailValidationCode
+   Email verified flag
+   Email send counter - set to 0 at creation, incremented by 1 each time an email is sent, used for limiting emails
+   SMSValidationCode
+   SMS send counter - set to 0 at creation, incremented by 1 each time an SMS is sent, used for limiting SMS
+   SMS verified flag
+   Request approved flag
+   Request declined flag
+   InternalComment - string, human-readable comment for internal use
+   InternalDeclineReason - string, human-readable reason for declining, not shown to end user
+   PublicDeclineReason - string, human-readable and shown to end user if this request was declined
+
+Registration request log table:
+   EventID - UUID, primary key
+   Request ID - UUID, foreign key
+   Timestamp - standard timestamp
+   Secret - boolean flag, if set end user won't be able to see
+   Event type - type of event, string
+   Event summary - human-readable summary
+   Event metadata - JSON blob
+
+Endpoints
+   All endpoints take input as form-encoded or a JSON object, depending on the content negotiation
+   Endpoints return either JSON or HTML depending on content negotiation
+
+   Authentication is via a shared secret anD HMAC
+
+   GET /user/<username>
+       HTTP 200 returned if this username exists on the blockchain
+       HTTP 404 returned if this username does not exist
+       If 200, in future will return profile data, for now returns a very simple profile
+       If 404, the body is 0-length for JSON users, otherwise a standard template is returned for HTML users
+   
+   POST /registration
+       Takes fields:
+          Requested username
+          Primary email
+          Primary phone number (optional)
+          Third party data type
+          Third party data
+       Validates provided data and if valid creates a new registration request and returns a redirect to /registration/<ID>
+   
+   GET /registration/<ID>
+       JSON:
+           Returns all fields for the specified registration request, except those limited for security reasons
+           This will include email and SMS codes for authenticated clients
+           Un-authenticated clients will NOT get these codes, for obvious reasons
+       HTML:
+           Unauthenticated users:
+             Redirects to one of the other resources as appropriate, or shows message indicating registration is complete
+             If registration is complete, redirects to login page after a delay
+
+   GET /registration/<ID>/verify-email
+       Un-authenticated users:
+          For HTML, returns a form with an input for providing the email code to continue registration, or to request a resend
+          For JSON, redirects to /registration/<ID>
+       Authenticated users:
+          For HTML, returns a page showing a copy of the email sent to the user, including the code and a form to verify immediately or change email address
+          For JSON, redirects to /registration/<ID> (which should include all details)
+
+   GET /registration/<ID>/verify-sms
+       Un-authenticated users:
+          For HTML, returns a form with an input for providing the SMS code to continue registration, or to request a resend
+          For JSON, redirects to /registration/<ID>
+       Authenticated users:
+          For HTML, returns a page showing a copy of the text sent to the user, including the code and a form to verify immediately or change phone number
+          For JSON, redirects to /registration/<ID> (which should include all details)
+
+   POST /registration/<ID>/verify-email
+       Requires field 'code'
+       If valid:
+          Sets the Email verified flag, redirects to /registration/<ID>
+
+   POST /registration/<ID>/verify-sms
+       Requires field 'code'
+       If valid:
+          Sets the SMS verified flag, redirects to /registration/<ID>
